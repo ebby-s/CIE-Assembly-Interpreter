@@ -101,6 +101,7 @@ def execute_program(prog):
     # all to False
     comparison_bits = {}    
     comparison_bits['EQ'] = False
+    comparison_bits['GT'] = False
     pc = 0
     steps = 0
 
@@ -144,7 +145,8 @@ def execute_program(prog):
         # indexed addressing, copy contents from calculated address to ACC
         if line[0] == 'LDX':
             while len(prog) < labels[line[1]]+regs['IX']+2: prog.append([str(0)])
-            regs['ACC'] = int(prog[1+labels[line[1]]+regs['IX']][0])
+            try: regs['ACC'] = int(prog[1+labels[line[1]]+regs['IX']][0])
+            except: regs['ACC'] = int(prog[1+labels[str(int(line[1])+regs['IX'])]][0])
 
         # immediate addressing, load number to IX
         if line[0] == 'LDR':
@@ -175,8 +177,10 @@ def execute_program(prog):
         elif line[0] == 'CMP':
             if line[1][0] == '#':
                 comparison_bits['EQ'] = regs['ACC'] == int(line[1][1:])
+                comparison_bits['GT'] = regs['ACC'] >= int(line[1][1:])
             else:
                 comparison_bits['EQ'] = regs['ACC'] == int(prog[1+labels[line[1]]][0])
+                comparison_bits['GT'] = regs['ACC'] >= int(prog[1+labels[line[1]]][0])
 
         # jump to a label
         elif line[0] == 'JMP':
@@ -187,6 +191,9 @@ def execute_program(prog):
             pc = labels[line[1]]
 
         elif line[0] == 'JPN' and not comparison_bits['EQ']:
+            pc = labels[line[1]]
+
+        elif line[0] == 'JGE' and comparison_bits['GT']:
             pc = labels[line[1]]
 
         # bit-wise AND between register and operand and stored in register
